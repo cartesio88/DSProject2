@@ -12,7 +12,7 @@
 		</jar>
 		<jar destfile="/home/cesar/git/DSProject2/DSProject2/Client.jar" filesetmanifest="mergewithoutmain">
 			<manifest>
-				<attribute name="Main-Class" value="DSProject.Client" />
+				<attribute name="Main-Class" value="Client" />
 				<attribute name="Class-Path" value="." />
 			</manifest>
 			<fileset dir="/home/cesar/git/DSProject2/DSProject2/bin" />
