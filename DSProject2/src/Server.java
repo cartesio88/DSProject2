@@ -16,11 +16,11 @@ public class Server {
 		System.setProperty("java.rmi.server.codebase", "file:./bin");
 		System.setProperty("java.security.policy", "file:./policyfile");
 
-		if (args.length != 4 && args.length != 2) {
+		if (args.length != 5 && args.length != 3) {
 			System.out
-					.println("Usage: java -jar Server.jar server [port] [coordinator ip] [coordinator port]# For regular server");
+					.println("Usage: java -jar Server.jar server [propagation method] [port] [coordinator ip] [coordinator port]# For regular server");
 			System.out
-					.println("       java -jar Server.jar coordinator [port] # For coordinator");
+					.println("       java -jar Server.jar coordinator [propagation method] [port] # For coordinator");
 			
 			return;
 		}
@@ -29,15 +29,16 @@ public class Server {
 
 		int coordinatorPort = 0;
 		InetAddress coordinatorIp = null;
-		int serverPort = portCheck(args[1], scan);
+		int serverPort = portCheck(args[2], scan);
+		String propagationMethod = args[1];
 		InetAddress serverIp = getServerIP();
 		boolean isCoordinator = false;
 		
 		if (args[0].equalsIgnoreCase("server")) {
 			System.out.println("Configuring as a regular server.");
-			coordinatorPort = portCheck(args[3], scan);
+			coordinatorPort = portCheck(args[4], scan);
 			try {
-				coordinatorIp = InetAddress.getByName(args[2]);
+				coordinatorIp = InetAddress.getByName(args[3]);
 			} catch (UnknownHostException e) {
 				System.out.println("Unknown coordinator ip: "+coordinatorIp);
 				e.printStackTrace();
@@ -51,11 +52,18 @@ public class Server {
 			System.out.println("[ERROR] Invalid role: " + args[0]);
 			return;
 		}
+		
+		// Check propagation method
+		if(!propagationMethod.equalsIgnoreCase("sequential") && !propagationMethod.equalsIgnoreCase("quorum") && !propagationMethod.equalsIgnoreCase("read-your-write")){
+			System.out.println("Invalid propagation method: "+propagationMethod);
+			System.out.println("Valid methods are: \"sequential\", \"quorum\" or \"read-your-write\"");
+			return;
+		}
 
 		try {
 			@SuppressWarnings("unused")
 			ServerRMI server = new ServerRMI(serverIp, serverPort, isCoordinator,
-					coordinatorIp, coordinatorPort);
+					coordinatorIp, coordinatorPort, propagationMethod);
 		} catch (RemoteException e) {
 			System.out.println("Error creating the RMI object server");
 			e.printStackTrace();

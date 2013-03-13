@@ -18,6 +18,7 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 	private String serverName = "";
 	private String coordinatorName = "";
 	private ServerInterface coordinator = null;
+	private String propagationMethod = "";
 
 	// private LinkedList<Article> articles;
 	private BulletinBoard bulletinBoard;
@@ -25,7 +26,7 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 
 	public ServerRMI(InetAddress serverIp, int serverPort,
 			boolean isCoordinator, InetAddress coordinatorIp,
-			int coordinatorPort) throws RemoteException, NotBoundException {
+			int coordinatorPort, String propagationMethod) throws RemoteException, NotBoundException {
 		super();
 
 		this.serverIp = serverIp;
@@ -33,6 +34,7 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 		this.isCoordinator = isCoordinator;
 		this.coordinatorIp = coordinatorIp;
 		this.coordinatorPort = coordinatorPort;
+		this.propagationMethod = propagationMethod;
 		serverName = serverIp.getHostAddress() + ":" + serverPort;
 		if(!isCoordinator) coordinatorName = coordinatorIp.getHostAddress() + ":" + coordinatorPort;
 
@@ -49,6 +51,7 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 					+ coordinatorPort);
 			System.out.println("Coordinator Binding Name: \"" + coordinatorName + "\"");
 		}
+		System.out.println("Propagation method: "+propagationMethod);
 
 		System.setProperty("java.rmi.server.hostname",
 				serverIp.getHostAddress());
