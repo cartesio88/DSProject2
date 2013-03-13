@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project DSProject1">
+	<!--this file was created by Eclipse Runnable JAR Export Wizard-->
+	<!--ANT 1.7 is required                                        -->
+	<target name="create_run_jar">
+		<jar destfile="/home/cesar/git/DSProject2/DSProject2/Server.jar" filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="Server" />
+				<attribute name="Class-Path" value="." />
+			</manifest>
+			<fileset dir="/home/cesar/git/DSProject2/DSProject2/bin" />
+		</jar>
+		<jar destfile="/home/cesar/git/DSProject2/DSProject2/Client.jar" filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="DSProject.Client" />
+				<attribute name="Class-Path" value="." />
+			</manifest>
+			<fileset dir="/home/cesar/git/DSProject2/DSProject2/bin" />
+		</jar>
+	</target>
+</project>
