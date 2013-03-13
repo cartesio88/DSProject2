@@ -6,6 +6,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 
 public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 
@@ -19,6 +20,7 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 	private String coordinatorName = "";
 	private ServerInterface coordinator = null;
 	private String propagationMethod = "";
+	private ArrayList<HostRecord> servers = null;
 
 	// private LinkedList<Article> articles;
 	private BulletinBoard bulletinBoard;
@@ -46,13 +48,17 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 			System.out.println("Role: REGULAR SERVER");
 		System.out.println("Address: " + serverIp.getHostAddress() + ":" + serverPort);
 		System.out.println("Binding Name: \"" + serverName+ "\"");
+		
+		
 		if (!isCoordinator) {
 			System.out.println("Coordinator Address: " + coordinatorIp.getHostAddress() + ":"
 					+ coordinatorPort);
 			System.out.println("Coordinator Binding Name: \"" + coordinatorName + "\"");
 		}
 		System.out.println("Propagation method: "+propagationMethod);
-
+/* ------------------- */
+		
+		
 		System.setProperty("java.rmi.server.hostname",
 				serverIp.getHostAddress());
 		System.out.println("Starting the Server: "
@@ -65,13 +71,18 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 		Registry localRegistry = LocateRegistry.createRegistry(serverPort);
 		localRegistry.rebind(serverName, this);
 
+		// Regular server initializer
 		if (!isCoordinator) { // Binding with the coordinator
 			Registry coordinatorRegistry = LocateRegistry.getRegistry(
 					coordinatorIp.getHostAddress(), coordinatorPort);
 
 			coordinator = (ServerInterface) coordinatorRegistry.lookup(coordinatorName);
-		}else{
+			if(!coordinator.register(serverIp.getHostAddress(), serverPort)){ // Registering with the coordinator
+				System.out.println("ERROR Could not register with the coordinator :/");
+			}
+		}else{ // Coordinator initializer
 			coordinator = this;
+			servers = new ArrayList<HostRecord>();
 		}
 
 	}
@@ -130,6 +141,27 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 	public boolean synch() throws RemoteException {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public boolean register(String ip, int port) throws RemoteException {
+		
+		if(!isCoordinator){
+			System.out.println("ERROR Asking a server which is not the coordinator to register another server");
+			return false;
+		}
+		
+		HostRecord server = new HostRecord(ip, port);
+		System.out.println("Registering server: "+server);
+		
+		if(servers.contains(server)){
+			System.out.println("ERROR The server was already registered ["+server+"]");
+			return false;
+		}
+		
+		servers.add(server);
+		
+		return true;
 	}
 
 }

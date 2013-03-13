@@ -12,4 +12,5 @@ public interface ServerInterface extends Remote {
 	/* Server -> Coordinator interface */
 	int getNextId() throws RemoteException;
 	boolean synch() throws RemoteException; // To update all replicas
+	boolean register(String ip, int port) throws RemoteException; // A server register to the coordinator
 }
