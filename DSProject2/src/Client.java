@@ -72,19 +72,44 @@ public class Client {
 				Integer Option = Integer.valueOf(Choice);
 
 				switch (Option) {
-				case 1: // Post
-
+				case 1:{ // Post
+					System.out.println("Enter title:");
+					String title = scan.nextLine();
+					
+					System.out.println("Enter content:");
+					String content = scan.nextLine();
+					
+					if(server.Post(title, content)){
+						System.out.println("Posted successfully!");
+					}else{
+						System.out.println("Failed to post... ;(");
+					}
 					break;
+				}
 				case 2: { // Read
-
+					String list = server.Read();
+					System.out.println(" == Articles ==");
+					System.out.println(list);
+					System.out.println(" ==============");
 					break;
 				}
 				case 3: { // Choose
-					
+					System.out.println("Enter ID:");
+					String strId = scan.nextLine();
+					int id = Integer.valueOf(strId);
+					String article = server.Choose(id);
+					System.out.println(article);
 					break;
 				}
 				case 4: { // Reply
-				
+					System.out.println("Enter ID of article to reply:");
+					String strId = scan.nextLine();
+					int id = Integer.valueOf(strId);
+					
+					System.out.println("Enter content of the response:");
+					String content = scan.nextLine();
+					
+					server.Reply(id, content);
 					break;
 				}
 				case 0: // Exit

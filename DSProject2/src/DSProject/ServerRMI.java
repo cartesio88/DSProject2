@@ -67,6 +67,8 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 					coordinatorIp.getHostAddress(), coordinatorPort);
 
 			coordinator = (ServerInterface) coordinatorRegistry.lookup(coordinatorName);
+		}else{
+			coordinator = this;
 		}
 
 	}
@@ -114,6 +116,12 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 			nextArticleId++;
 		}
 		return nextArticleId - 1;
+	}
+
+	@Override
+	public boolean synch() throws RemoteException {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 }

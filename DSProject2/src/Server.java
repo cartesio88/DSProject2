@@ -21,6 +21,7 @@ public class Server {
 					.println("Usage: java -jar Server.jar server [port] [coordinator ip] [coordinator port]# For regular server");
 			System.out
 					.println("       java -jar Server.jar coordinator [port] # For coordinator");
+			
 			return;
 		}
 		Scanner scan = new Scanner(System.in);
@@ -42,7 +43,7 @@ public class Server {
 			}
 			isCoordinator = false;
 		} else if (args[0].equalsIgnoreCase("server")) {
-			System.out.println("Configurins as the coordinator.");
+			System.out.println("Configuring as the coordinator.");
 			isCoordinator = true;
 		} else {
 			System.out.println("[ERROR] Invalid role: " + args[0]);
