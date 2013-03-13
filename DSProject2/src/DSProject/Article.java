@@ -29,13 +29,16 @@ public class Article {
 	
 	public String partialArticle() {
 		String string = "";
-		string = id + ". "+title+": "+content.substring(0, 50)+"...";
+		String subcontent = content;
+		if(subcontent.length()>25) subcontent = subcontent.substring(0, 25)+"[...]";
+		
+		string = id + ". "+title+": "+subcontent;
 		return string;
 	}
 	
 	public String completeArticle(){
 		String string = "";
-		string = id + ". "+title+":\n "+content;
+		string = id + ". "+title+":\n"+content;
 		return string;
 	}
 

@@ -24,6 +24,7 @@ public class Server {
 			
 			return;
 		}
+		
 		Scanner scan = new Scanner(System.in);
 
 		int coordinatorPort = 0;
@@ -31,6 +32,7 @@ public class Server {
 		int serverPort = portCheck(args[1], scan);
 		InetAddress serverIp = getServerIP();
 		boolean isCoordinator = false;
+		
 		if (args[0].equalsIgnoreCase("server")) {
 			System.out.println("Configuring as a regular server.");
 			coordinatorPort = portCheck(args[3], scan);
@@ -42,7 +44,7 @@ public class Server {
 				return;
 			}
 			isCoordinator = false;
-		} else if (args[0].equalsIgnoreCase("server")) {
+		} else if (args[0].equalsIgnoreCase("coordinator")) {
 			System.out.println("Configuring as the coordinator.");
 			isCoordinator = true;
 		} else {
@@ -76,8 +78,7 @@ public class Server {
 					break;
 				}
 			}
-			System.setProperty("java.rmi.server.hostname",
-					serverIp.getHostAddress());
+			System.setProperty("java.rmi.server.hostname", serverIp.getHostAddress());
 
 		} catch (SocketException e) {
 			System.out.println("ERROR getting the interfaces of the device");

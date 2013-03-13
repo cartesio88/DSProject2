@@ -29,30 +29,20 @@ public class Client {
 		Integer serverPort = null;
 		boolean done = false;
 
+		if (args.length != 2) {
+			System.out
+					.println("Usage: java -jar Client.jar [server ip] [server port]");
+			return;
+		}
+
 		getClientIP();
 
 		Scanner scan = new Scanner(System.in);
 
-		if (args.length > 0) {
-
-			serverIp = checkIp(args[0], scan);
-			System.out.println("Server IP: " + serverIp);
-			serverPort = portCheck(args[1], scan);
-			System.out.println("Port: " + serverPort);
-
-		} else {
-
-			// Getting an IP from USER
-			System.out.println("Enter Server' IP you want to join: ");
-			String s = scan.nextLine();
-			serverIp = checkIp(s, scan);
-
-			// Getting a port from USER
-			System.out.println("Enter port: ");
-			s = scan.nextLine();
-			serverPort = portCheck(s, scan);
-
-		}
+		serverIp = checkIp(args[0], scan);
+		System.out.println("Server IP: " + serverIp);
+		serverPort = portCheck(args[1], scan);
+		System.out.println("Port: " + serverPort);
 
 		Registry registry = LocateRegistry.getRegistry(serverIp, serverPort);
 		String serverName = serverIp + ":" + serverPort;
@@ -64,7 +54,7 @@ public class Client {
 
 			try {
 
-				System.out.println("Choose the option: \n" + "1) Post\n"
+				System.out.println("\nChoose the option: \n" + "1) Post\n"
 						+ "2) Read\n" + "3) Choose\n" + "4) Reply\n"
 						+ "0) Exit\n");
 
@@ -72,16 +62,16 @@ public class Client {
 				Integer Option = Integer.valueOf(Choice);
 
 				switch (Option) {
-				case 1:{ // Post
+				case 1: { // Post
 					System.out.println("Enter title:");
 					String title = scan.nextLine();
-					
+
 					System.out.println("Enter content:");
 					String content = scan.nextLine();
-					
-					if(server.Post(title, content)){
+
+					if (server.Post(title, content)) {
 						System.out.println("Posted successfully!");
-					}else{
+					} else {
 						System.out.println("Failed to post... ;(");
 					}
 					break;
@@ -98,27 +88,34 @@ public class Client {
 					String strId = scan.nextLine();
 					int id = Integer.valueOf(strId);
 					String article = server.Choose(id);
-					System.out.println(article);
+					if(article.equals("")) System.out.println("Article not found!");
+					else System.out.println(article);
 					break;
 				}
 				case 4: { // Reply
 					System.out.println("Enter ID of article to reply:");
 					String strId = scan.nextLine();
 					int id = Integer.valueOf(strId);
-					
+
 					System.out.println("Enter content of the response:");
 					String content = scan.nextLine();
-					
-					server.Reply(id, content);
+
+					if(server.Reply(id, content)){
+						System.out.println("Response sent successfuly!");
+					}else{
+						System.out.println("Error sending the response");
+					}
+						
 					break;
 				}
 				case 0: // Exit
-
+					System.out.println("Bye!");
 					System.exit(0);
 					break;
 
 				}
-			} catch (NumberFormatException e) {	}
+			} catch (NumberFormatException e) {
+			}
 
 		}
 	}

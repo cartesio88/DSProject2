@@ -33,8 +33,8 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 		this.isCoordinator = isCoordinator;
 		this.coordinatorIp = coordinatorIp;
 		this.coordinatorPort = coordinatorPort;
-		serverName = serverIp + ":" + serverPort;
-		if(!isCoordinator) coordinatorName = serverIp + ":" + coordinatorPort;
+		serverName = serverIp.getHostAddress() + ":" + serverPort;
+		if(!isCoordinator) coordinatorName = coordinatorIp.getHostAddress() + ":" + coordinatorPort;
 
 		// Printing info
 		System.out.println(" == Server info == ");
@@ -42,10 +42,10 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 			System.out.println("Role: COORDINATOR");
 		else
 			System.out.println("Role: REGULAR SERVER");
-		System.out.println("Address: " + serverIp + ":" + serverPort);
+		System.out.println("Address: " + serverIp.getHostAddress() + ":" + serverPort);
 		System.out.println("Binding Name: \"" + serverName+ "\"");
 		if (!isCoordinator) {
-			System.out.println("Coordinator Address: " + coordinatorIp + ":"
+			System.out.println("Coordinator Address: " + coordinatorIp.getHostAddress() + ":"
 					+ coordinatorPort);
 			System.out.println("Coordinator Binding Name: \"" + coordinatorName + "\"");
 		}
@@ -80,7 +80,7 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 		Article article = new Article(articleId, title, content);
 		bulletinBoard.addArticle(article);
 
-		return false;
+		return true;
 	}
 
 	@Override
@@ -102,8 +102,13 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 
 	@Override
 	public boolean Reply(int id, String content) throws RemoteException {
+		System.out.println("Receiving a response");
 		int nextId = coordinator.getNextId();
-		return bulletinBoard.reply(id, nextId, content);
+		boolean success = bulletinBoard.reply(id, nextId, content);
+		if(!success){
+			System.out.println("ERROR replying!");
+		}
+		return success;
 
 	}
 
