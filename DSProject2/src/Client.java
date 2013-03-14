@@ -13,7 +13,11 @@ import DSProject.ServerInterface;
 
 public class Client {
 
+	private static  final int MIN_DELAY = 500; // Half a second
+	private static  final int MAX_DELAY = 5000; // Five seconds
+	
 	private static InetAddress clientIp = null;
+	
 	private static final String IPv4_REGEX = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
 			+ "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
 			+ "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
@@ -69,6 +73,9 @@ public class Client {
 					System.out.println("Enter content:");
 					String content = scan.nextLine();
 
+					// Fake delay
+					Thread.sleep((long) (MIN_DELAY + Math.random()*MAX_DELAY));
+					
 					if (server.Post(title, content)) {
 						System.out.println("Posted successfully!");
 					} else {
@@ -100,6 +107,9 @@ public class Client {
 					System.out.println("Enter content of the response:");
 					String content = scan.nextLine();
 
+					// Fake delay
+					Thread.sleep((long) (MIN_DELAY + Math.random()*MAX_DELAY));
+					
 					if(server.Reply(id, content)){
 						System.out.println("Response sent successfuly!");
 					}else{
@@ -165,7 +175,6 @@ public class Client {
 					System.out.println("Port is out of range try again: ");
 					p = Integer.valueOf(scan.nextLine());
 				}
-
 			}
 		}
 		return p;
