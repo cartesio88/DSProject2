@@ -48,13 +48,13 @@ public class BulletinBoard {
 		return null;
 	}
 	
-	public boolean reply(int id, int nextId, String content){
-		Article mainArticle = getArticle(id);
+	public boolean reply(int responseId, int postId, String content){
+		Article mainArticle = getArticle(postId);
 		if(mainArticle == null){
-			System.out.println("[BulletinBoard] Can not find article with id: "+id);
+			System.out.println("[BulletinBoard] Can not find article with id: "+postId);
 			return false;
 		}else{
-			Article response = new Article(nextId, "Re: "+mainArticle.getTitle(), content);
+			Article response = new Article(responseId, postId, "Re: "+mainArticle.getTitle(), content);
 			mainArticle.getReplies().add(response);
 		}
 		return true;

@@ -5,20 +5,23 @@ import java.util.LinkedList;
 /* Encapsulates an article */
 public class Article {
 	private int id;
+	private int parentId;
 	private String title = "";
 	private String content = "";
 	
 	LinkedList<Article> replies = null;
 	
 
-	public Article(int id, String title, String content) {
+	public Article(int id, int parentId, String title, String content) {
 		this.id = id;
+		this.parentId = parentId;
 		this.title = title;
 		this.content = content;
 		this.replies = new LinkedList<Article>();
 	}
 
 	public int getID(){ return id; }
+	public int getParentID(){ return parentId; }
 	public String getTitle(){ return title; }
 	public String getContent() {return content; }
 	public LinkedList<Article> getReplies() { return replies; }
