@@ -7,6 +7,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Queue;
 
 public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
@@ -21,9 +22,10 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 	private String coordinatorName = "";
 	private ServerInterface coordinator = null;
 	private String propagationMethod = "";
+	private CoordinatorPropagator propagator = null;
 
 	private ArrayList<HostRecord> servers = null;
-	private Queue<UpdateOperation> opQueue = null;
+	private LinkedList<UpdateOperation> opQueue = null;
 
 	// private LinkedList<Article> articles;
 	private BulletinBoard bulletinBoard;
@@ -94,6 +96,9 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 		} else { // Coordinator initializer
 			coordinator = this;
 			servers = new ArrayList<HostRecord>();
+			opQueue = new LinkedList<UpdateOperation>();
+			propagator = new CoordinatorPropagator(servers, opQueue);
+			propagator.start();			
 		}
 	}
 
@@ -114,6 +119,7 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 	}
 
 	public boolean PostSeqConsistency(String title, String content) throws RemoteException{
+		System.out.println("Receiving a Post [Sequential consistency]");
 		if (isCoordinator) { // I am the coordinator
 			int articleId = getNextId();
 			Article a = new Article(articleId, -1, title, content);
@@ -142,7 +148,7 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 	}
 	
 	public boolean ReplySeqConsistency(int id, String content) throws RemoteException {
-		System.out.println("Receiving a response");
+		System.out.println("Receiving a response [Sequential consistency]");
 
 		if (isCoordinator) { // I am the coordinator
 			int articleId = getNextId();
@@ -220,7 +226,7 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 	@Override
 	public boolean ackWritePost(int id, String title, String content)
 			throws RemoteException {
-
+		System.out.println("Received an acknoledgement to write a Post");
 		Article article = new Article(id, -1, title, content);
 		bulletinBoard.addArticle(article);
 		return true;
@@ -229,6 +235,7 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 	@Override
 	public boolean ackWriteReply(int responseId, int postId, String content)
 			throws RemoteException {
+		System.out.println("Received an acknoledgement to write a Reply");
 		boolean success = bulletinBoard.reply(responseId, postId, content);
 		if (!success) {
 			System.out.println("ERROR replying!");
@@ -241,6 +248,7 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 			throws RemoteException {
 
 		if (isCoordinator) { // I am the coordinator
+			System.out.println("Received Update from a server to propagate a Post");
 			int articleId = getNextId();
 			Article a = new Article(articleId, -1, title, content);
 			UpdateOperation op = new UpdateOperation(a, "Post");
@@ -259,6 +267,7 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 			throws RemoteException {
 
 		if (isCoordinator) { // I am the coordinator
+			System.out.println("Received Update from a server to propagate a Reply");
 			int articleId = getNextId();
 			Article a = new Article(articleId, id, "", content);
 			UpdateOperation op = new UpdateOperation(a, "Response");

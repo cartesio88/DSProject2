@@ -21,6 +21,7 @@ public class Server {
 					.println("Usage: java -jar Server.jar server [propagation method] [port] [coordinator ip] [coordinator port]# For regular server");
 			System.out
 					.println("       java -jar Server.jar coordinator [propagation method] [port] # For coordinator");
+			System.out.println("\nValid propagation methods are: \"sequential\", \"quorum\" or \"read-your-write\"");
 			
 			return;
 		}

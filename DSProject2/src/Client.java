@@ -14,7 +14,7 @@ import DSProject.ServerInterface;
 public class Client {
 
 	private static  final int MIN_DELAY = 500; // Half a second
-	private static  final int MAX_DELAY = 5000; // Five seconds
+	private static  final int MAX_DELAY = 1000; // Five seconds
 	
 	private static InetAddress clientIp = null;
 	
@@ -64,7 +64,8 @@ public class Client {
 
 				String Choice = scan.nextLine();
 				Integer Option = Integer.valueOf(Choice);
-
+				System.out.println();
+				
 				switch (Option) {
 				case 1: { // Post
 					System.out.println("Enter title:");
