@@ -10,39 +10,35 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
-public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
+public class ServerRMIQuorumCons extends UnicastRemoteObject implements
+		ServerInterface {
 
 	private static final long serialVersionUID = 1L;
-	private int serverPort = 0;
-	private InetAddress serverIp = null;
-	private int coordinatorPort = 0;
-	private InetAddress coordinatorIp = null;
-	private boolean isCoordinator = false;
+
+	private int QUORUM_NR = 1;
+	private int QUORUM_NW = 1;
+
 	private String serverName = "";
+
+	private boolean isCoordinator = false;
 	private String coordinatorName = "";
 	private ServerInterface coordinator = null;
-	private String propagationMethod = "";
-	private CoordinatorPropagator propagator = null;
 
-	private ArrayList<HostRecord> servers = null;
-	private LinkedList<UpdateOperation> opQueue = null;
-
-	// private LinkedList<Article> articles;
 	private BulletinBoard bulletinBoard;
 	private int nextArticleId = 0;
+	private ArrayList<HostRecord> servers = null;
 
-	public ServerRMI(InetAddress serverIp, int serverPort,
+	/* Quorum consistency */
+	private int dbVersion = 0;
+	private LinkedList<UpdateOperation> historic = null;
+
+	public ServerRMIQuorumCons(InetAddress serverIp, int serverPort,
 			boolean isCoordinator, InetAddress coordinatorIp,
-			int coordinatorPort, String propagationMethod)
-			throws RemoteException, NotBoundException {
+			int coordinatorPort) throws RemoteException, NotBoundException {
 		super();
 
-		this.serverIp = serverIp;
-		this.serverPort = serverPort;
 		this.isCoordinator = isCoordinator;
-		this.coordinatorIp = coordinatorIp;
-		this.coordinatorPort = coordinatorPort;
-		this.propagationMethod = propagationMethod;
+		
 		serverName = serverIp.getHostAddress() + ":" + serverPort;
 		if (!isCoordinator)
 			coordinatorName = coordinatorIp.getHostAddress() + ":"
@@ -64,7 +60,6 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 			System.out.println("Coordinator Binding Name: \"" + coordinatorName
 					+ "\"");
 		}
-		System.out.println("Propagation method: " + propagationMethod);
 		/* ------------------- */
 
 		System.setProperty("java.rmi.server.hostname",
@@ -96,74 +91,40 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 		} else { // Coordinator initializer
 			coordinator = this;
 			servers = new ArrayList<HostRecord>();
-			opQueue = new LinkedList<UpdateOperation>();
-			propagator = new CoordinatorPropagator(servers, opQueue);
-			propagator.start();			
+	
 		}
 	}
 
 	/* Client -> Server interface */
 	@Override
 	public boolean Post(String title, String content) throws RemoteException {
-		System.out.println("Posting an article!");
+		System.out.println("Receiving a Post [Quorum consistency]");
 
-		if(propagationMethod.equalsIgnoreCase("sequential")){
-			return PostSeqConsistency(title, content);
-		}else if(propagationMethod.equalsIgnoreCase("quorum")){
-			
-		}else if(propagationMethod.equalsIgnoreCase("read-your-write")){
-			
-		}
-		
-		return false;
-	}
-
-	public boolean PostSeqConsistency(String title, String content) throws RemoteException{
-		System.out.println("Receiving a Post [Sequential consistency]");
 		if (isCoordinator) { // I am the coordinator
 			int articleId = getNextId();
 			Article a = new Article(articleId, -1, title, content);
-			UpdateOperation op = new UpdateOperation(a, "Post");
-			opQueue.add(op);
-			ackWritePost(articleId, title, content); // I actually write it
+			// TODO
 		} else { // I am a regular server
-			coordinator.updateWritePost(title, content);
+			// TODO
 		}
 
 		return true;
-
 	}
 
 	@Override
 	public boolean Reply(int id, String content) throws RemoteException {
-		if(propagationMethod.equalsIgnoreCase("sequential")){
-			return ReplySeqConsistency(id, content);
-		}else if(propagationMethod.equalsIgnoreCase("quorum")){
-			
-		}else if(propagationMethod.equalsIgnoreCase("read-your-write")){
-			
-		}
-		
-		return false;
-	}
-	
-	public boolean ReplySeqConsistency(int id, String content) throws RemoteException {
-		System.out.println("Receiving a response [Sequential consistency]");
+		System.out.println("Receiving a response [Quorum consistency]");
 
 		if (isCoordinator) { // I am the coordinator
 			int articleId = getNextId();
 			Article a = new Article(articleId, id, "", content);
 			UpdateOperation op = new UpdateOperation(a, "Response");
-			opQueue.add(op);
-			ackWriteReply(articleId, id, content);
+			// TODO
 		} else { // I am a regular server
-			coordinator.updateWriteReply(id, content);
+			// TODO
 		}
-
 		return true;
 	}
-	
-	
 
 	@Override
 	public String Read() throws RemoteException {
@@ -220,65 +181,35 @@ public class ServerRMI extends UnicastRemoteObject implements ServerInterface {
 
 		servers.add(server);
 
-		return true;
-	}
+		// Update the Quorum values
+		QUORUM_NW = (int) (servers.size() / 2);
+		QUORUM_NR = servers.size() - QUORUM_NW + 1;
 
-	@Override
-	public boolean ackWritePost(int id, String title, String content)
-			throws RemoteException {
-		System.out.println("Received an acknoledgement to write a Post");
-		Article article = new Article(id, -1, title, content);
-		bulletinBoard.addArticle(article);
-		return true;
-	}
-
-	@Override
-	public boolean ackWriteReply(int responseId, int postId, String content)
-			throws RemoteException {
-		System.out.println("Received an acknoledgement to write a Reply");
-		boolean success = bulletinBoard.reply(responseId, postId, content);
-		if (!success) {
-			System.out.println("ERROR replying!");
+		if (QUORUM_NW > servers.size() || QUORUM_NR > servers.size()) {
+			System.out.println("ERROR Asigning invalid values of Quorum!");
 		}
-		return success;
+
+		return true;
 	}
 
 	@Override
-	public boolean updateWritePost(String title, String content)
-			throws RemoteException {
-
-		if (isCoordinator) { // I am the coordinator
-			System.out.println("Received Update from a server to propagate a Post");
-			int articleId = getNextId();
-			Article a = new Article(articleId, -1, title, content);
-			UpdateOperation op = new UpdateOperation(a, "Post");
-			opQueue.add(op);
-			ackWritePost(articleId, title, content); // I actually write it
-		} else { // I am a regular server
-			System.out
-					.println("ERROR Asking for a regular server to propagate an update");
+	public boolean ackWritePost(int id, String title, String content) throws RemoteException {
 			return false;
-		}
-		return true;
 	}
 
 	@Override
-	public boolean updateWriteReply(int id, String content)
-			throws RemoteException {
-
-		if (isCoordinator) { // I am the coordinator
-			System.out.println("Received Update from a server to propagate a Reply");
-			int articleId = getNextId();
-			Article a = new Article(articleId, id, "", content);
-			UpdateOperation op = new UpdateOperation(a, "Response");
-			opQueue.add(op);
-			ackWriteReply(articleId, id, content);
-		} else { // I am a regular server
-			System.out
-					.println("ERROR Asking for a regular server to propagate an update");
-			return false;
-		}
-		return true;
+	public boolean ackWriteReply(int responseId, int postId, String content) throws RemoteException {
+		return false;
 	}
 
+	@Override
+	public boolean updateWritePost(String title, String content) throws RemoteException{
+			return false;
+
+	}
+
+	@Override
+	public boolean updateWriteReply(int id, String content) throws RemoteException{
+				return false;
+	}
 }

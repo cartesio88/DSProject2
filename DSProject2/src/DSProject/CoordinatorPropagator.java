@@ -8,6 +8,10 @@ import java.util.Queue;
 
 public class CoordinatorPropagator extends Thread {
 
+	private static  final int MIN_DELAY = 500; // Half a second
+	private static  final int MAX_DELAY = 1000; // Five seconds
+	
+	
 	private LinkedList<UpdateOperation> opQueue = null;
 	private ArrayList<HostRecord> servers = null;
 
@@ -50,6 +54,13 @@ public class CoordinatorPropagator extends Thread {
 						System.out
 								.print("ERROR Some of the servers could not be binded properly: "
 										+ server);
+					}
+					
+					// Fake delay
+					try {
+						Thread.sleep((long) (MIN_DELAY + Math.random()*MAX_DELAY));
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
 				}
 			}

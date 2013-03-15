@@ -127,7 +127,6 @@ public class Client {
 				}
 			} catch (NumberFormatException e) {
 			}
-
 		}
 	}
 

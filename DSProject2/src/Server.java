@@ -7,7 +7,10 @@ import java.rmi.RemoteException;
 import java.util.Enumeration;
 import java.util.Scanner;
 
-import DSProject.ServerRMI;
+import DSProject.ServerInterface;
+import DSProject.ServerRMIQuorumCons;
+import DSProject.ServerRMIReadYourWriteCons;
+import DSProject.ServerRMISeqCons;
 
 public class Server {
 
@@ -62,9 +65,16 @@ public class Server {
 		}
 
 		try {
-			@SuppressWarnings("unused")
-			ServerRMI server = new ServerRMI(serverIp, serverPort, isCoordinator,
-					coordinatorIp, coordinatorPort, propagationMethod);
+			if(propagationMethod.equalsIgnoreCase("sequential")){
+			ServerInterface server = new ServerRMISeqCons(serverIp, serverPort, isCoordinator,
+					coordinatorIp, coordinatorPort);
+			}else if(propagationMethod.equalsIgnoreCase("quorum")){
+				ServerInterface server = new ServerRMIQuorumCons(serverIp, serverPort, isCoordinator,
+						coordinatorIp, coordinatorPort);
+			}else if(propagationMethod.equalsIgnoreCase("read-your-write")){
+				ServerInterface server = new ServerRMIReadYourWriteCons(serverIp, serverPort, isCoordinator,
+						coordinatorIp, coordinatorPort);
+			}
 		} catch (RemoteException e) {
 			System.out.println("Error creating the RMI object server");
 			e.printStackTrace();
