@@ -8,7 +8,6 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Queue;
 
 public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		ServerInterface {

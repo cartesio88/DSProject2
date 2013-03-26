@@ -1,11 +1,7 @@
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.Enumeration;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
@@ -15,8 +11,6 @@ public class Client {
 
 	private static  final int MIN_DELAY = 500; // Half a second
 	private static  final int MAX_DELAY = 1000; // Five seconds
-	
-	private static InetAddress clientIp = null;
 	
 	private static final String IPv4_REGEX = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
 			+ "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
@@ -38,8 +32,6 @@ public class Client {
 					.println("Usage: java -jar Client.jar [server ip] [server port]");
 			return;
 		}
-
-		getClientIP();
 
 		Scanner scan = new Scanner(System.in);
 
@@ -127,25 +119,6 @@ public class Client {
 				}
 			} catch (NumberFormatException e) {
 			}
-		}
-	}
-
-	private static void getClientIP() {
-		try {
-			Enumeration<NetworkInterface> nets = NetworkInterface
-					.getNetworkInterfaces();
-
-			while (nets.hasMoreElements()) {
-				NetworkInterface ni = nets.nextElement();
-				if (!ni.isLoopback() && ni.isUp()) {
-					clientIp = ni.getInetAddresses().nextElement();
-					break;
-				}
-			}
-
-		} catch (SocketException e) {
-			System.out.println("ERROR getting the interfaces of the device");
-			e.printStackTrace();
 		}
 	}
 

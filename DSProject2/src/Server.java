@@ -14,6 +14,9 @@ import DSProject.ServerRMISeqCons;
 
 public class Server {
 
+	@SuppressWarnings("unused")
+	private static ServerInterface server;
+
 	public static void main(String[] args){
 		System.setProperty("java.net.preferIPv4Stack", "true");
 		System.setProperty("java.rmi.server.codebase", "file:./bin");
@@ -66,13 +69,13 @@ public class Server {
 
 		try {
 			if(propagationMethod.equalsIgnoreCase("sequential")){
-			ServerInterface server = new ServerRMISeqCons(serverIp, serverPort, isCoordinator,
+			server = new ServerRMISeqCons(serverIp, serverPort, isCoordinator,
 					coordinatorIp, coordinatorPort);
 			}else if(propagationMethod.equalsIgnoreCase("quorum")){
-				ServerInterface server = new ServerRMIQuorumCons(serverIp, serverPort, isCoordinator,
+				server = new ServerRMIQuorumCons(serverIp, serverPort, isCoordinator,
 						coordinatorIp, coordinatorPort);
 			}else if(propagationMethod.equalsIgnoreCase("read-your-write")){
-				ServerInterface server = new ServerRMIReadYourWriteCons(serverIp, serverPort, isCoordinator,
+				server = new ServerRMIReadYourWriteCons(serverIp, serverPort, isCoordinator,
 						coordinatorIp, coordinatorPort);
 			}
 		} catch (RemoteException e) {

@@ -8,13 +8,11 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Queue;
 
 public class ServerRMISeqCons extends UnicastRemoteObject implements ServerInterface {
 
 	private static final long serialVersionUID = 1L;
 	
-	private InetAddress serverIp = null;
 	private String serverName = "";
 	
 	private boolean isCoordinator = false;
@@ -36,7 +34,6 @@ public class ServerRMISeqCons extends UnicastRemoteObject implements ServerInter
 			throws RemoteException, NotBoundException {
 		super();
 
-		this.serverIp = serverIp;
 		this.isCoordinator = isCoordinator;
 		serverName = serverIp.getHostAddress() + ":" + serverPort;
 		if (!isCoordinator)
