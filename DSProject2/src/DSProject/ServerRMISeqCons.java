@@ -242,4 +242,12 @@ public class ServerRMISeqCons extends UnicastRemoteObject implements ServerInter
 		}
 		return true;
 	}
+
+	
+
+	@Override
+	public int getBBVersion() throws RemoteException {
+		System.out.println("ERROR Asking for BB Version in a sequential consistency context");
+		return 0;
+	}
 }

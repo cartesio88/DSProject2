@@ -72,6 +72,7 @@ public class Server {
 			server = new ServerRMISeqCons(serverIp, serverPort, isCoordinator,
 					coordinatorIp, coordinatorPort);
 			}else if(propagationMethod.equalsIgnoreCase("quorum")){
+				System.out.println("For QUORUM consistency, clients should connect to COORDINATOR only, who will forward the request to the different servers");
 				server = new ServerRMIQuorumCons(serverIp, serverPort, isCoordinator,
 						coordinatorIp, coordinatorPort);
 			}else if(propagationMethod.equalsIgnoreCase("read-your-write")){

@@ -43,12 +43,11 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		super();
 
 		this.isCoordinator = isCoordinator;
-		
+
 		serverName = serverIp.getHostAddress() + ":" + serverPort;
 		if (!isCoordinator)
-				coordinatorName = coordinatorIp.getHostAddress() + ":"
+			coordinatorName = coordinatorIp.getHostAddress() + ":"
 					+ coordinatorPort;
-		
 
 		// Printing info
 		System.out.println(" == Server info == ");
@@ -67,9 +66,9 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 					+ "\"");
 		}
 		/* ------------------- */
-		
+
 		/* Version Synchronization */
-		
+
 		if (isCoordinator) {
 			System.out.println("Run version syncronization....");
 			VersionSync sync = new VersionSync();
@@ -105,7 +104,8 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		} else { // Coordinator initializer
 			coordinator = this;
 			servers = new ArrayList<HostRecord>();
-			HostRecord coordinator = new HostRecord(serverIp.getHostAddress(), serverPort);
+			HostRecord coordinator = new HostRecord(serverIp.getHostAddress(),
+					serverPort);
 			servers.add(coordinator);
 		}
 	}
@@ -116,40 +116,40 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		System.out.println("Receiving a Post [Quorum consistency]");
 
 		if (isCoordinator) { // I am the coordinator
-			int articleId = getNextId();
-			Article a = new Article(articleId, -1, title, content);
 			Random rnd = new Random();
 			System.out.println("Number of servers total:" + servers.size());
-			
-			ArrayList<Integer> index = new ArrayList<Integer>();
-			ArrayList<Integer> Version = new ArrayList<Integer>();
-			for (int i=0; i<QUORUM_NW; i++){
-				int Num = rnd.nextInt(servers.size());
-				while (index.contains(Num)) 
-					Num = rnd.nextInt(servers.size());
-				index.add(Num);
-				Version.add(i, servers.get(index.get(i)).rmi.getBBVersion());
-				System.out.println("Index of server: " + index.get(i) + " Local Version: " + Version.get(i));
+
+			ArrayList<Integer> quorum = new ArrayList<Integer>();
+			for (int i = 0; i < servers.size(); i++)
+				quorum.add(i);
+
+			// Selecting the quorum
+			while (quorum.size() > QUORUM_NW) {
+				int i = rnd.nextInt(quorum.size());
+				quorum.remove(i);
 			}
-			int max = Collections.max(Version);
-			int maxInd = index.get(Version.indexOf(max));
-			System.out.println("Latest version: " + max +" Index of a server with latest version: " + maxInd);
-			servers.get(maxInd).rmi.ackWritePost(articleId, title, content);
-			
-			for (int i=0; i<servers.size(); i++){
-				System.out.println("Servers: " + servers.get(i).getIP() +":"+servers.get(i).getPort());
+
+			int maxVersion = -1;
+			HostRecord selectedServer = servers.get(0);
+
+			for (int i = 1; i < quorum.size(); i++) {
+				int currentVersion = servers.get(i).rmi.getBBVersion();
+				if (currentVersion > maxVersion) {
+					maxVersion = currentVersion;
+					selectedServer = servers.get(i);
+				}
 			}
-			//Iterator<HostRecord> server = servers.iterator();
-			//while(server.hasNext()){
-				//System.out.println("Servers: " + server.next().getIP() +":"+server.next().getPort());	
-			//}
-			
+
+			System.out.println("Latest version: " + maxVersion
+					+ " in the server: " + selectedServer);
+			System.out.println("Posting in that server :)");
+
+			int nextId = this.getNextId();
+			selectedServer.rmi.ackWritePost(nextId, title, content);
+
 		} else { // I am a regular server
-			int articleId = getNextId();
-			Article a = new Article(articleId, -1, title, content);
-			//bulletinBoard.addArticle(a);
-			//System.out.println("Version: " + bulletinBoard.GetVersion());
-			coordinator.Post(title,content);
+			System.out
+					.println("ERROR, in QUORUM consistency, the client is supposed to connect to the coordinator directly");
 		}
 
 		return true;
@@ -160,15 +160,40 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		System.out.println("Receiving a response [Quorum consistency]");
 
 		if (isCoordinator) { // I am the coordinator
-			int articleId = getNextId();
-			Article a = new Article(articleId, id, "", content);
-//			UpdateOperation op = new UpdateOperation(a, "Response");
-			
-			// TODO
+			Random rnd = new Random();
+			System.out.println("Number of servers total:" + servers.size());
+
+			ArrayList<Integer> quorum = new ArrayList<Integer>();
+			for (int i = 0; i < servers.size(); i++)
+				quorum.add(i);
+
+			// Selecting the quorum
+			while (quorum.size() > QUORUM_NW) {
+				int i = rnd.nextInt(quorum.size());
+				quorum.remove(i);
+			}
+
+			int maxVersion = -1;
+			HostRecord selectedServer = servers.get(0);
+
+			for (int i = 1; i < quorum.size(); i++) {
+				int currentVersion = servers.get(i).rmi.getBBVersion();
+				if (currentVersion > maxVersion) {
+					maxVersion = currentVersion;
+					selectedServer = servers.get(i);
+				}
+			}
+
+			System.out.println("Latest version: " + maxVersion
+					+ " in the server: " + selectedServer);
+			System.out.println("Replying in that server :)");
+
+			int nextId = this.getNextId();
+			selectedServer.rmi.ackWriteReply(nextId, id, content);
+
 		} else { // I am a regular server
-			int articleId = getNextId();
-			Article a = new Article(articleId, id, "", content);
-			bulletinBoard.reply(articleId, id, content);
+			System.out
+					.println("ERROR, in QUORUM consistency, the client is supposed to connect to the coordinator directly");
 		}
 		return true;
 	}
@@ -176,26 +201,102 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 	@Override
 	public String Read() throws RemoteException {
 		System.out.println("Reading the articles!");
-		System.out.println("Version: " + bulletinBoard.GetVersion());
-		return bulletinBoard.ReadArticlesList();
+
+		if (isCoordinator) { // I am the coordinator
+			Random rnd = new Random();
+			System.out.println("Number of servers total:" + servers.size());
+
+			ArrayList<Integer> quorum = new ArrayList<Integer>();
+			for (int i = 0; i < servers.size(); i++)
+				quorum.add(i);
+
+			// Selecting the quorum
+			while (quorum.size() > QUORUM_NR) {
+				int i = rnd.nextInt(quorum.size());
+				quorum.remove(i);
+			}
+
+			int maxVersion = -1;
+			HostRecord selectedServer = servers.get(0);
+
+			for (int i = 1; i < quorum.size(); i++) {
+				int currentVersion = servers.get(i).rmi.getBBVersion();
+				if (currentVersion > maxVersion) {
+					maxVersion = currentVersion;
+					selectedServer = servers.get(i);
+				}
+			}
+
+			System.out.println("Latest version: " + maxVersion
+					+ " in the server: " + selectedServer);
+			System.out.println("Reading from that server :)");
+
+			return selectedServer.rmi.Read();
+
+		} else { // I am a regular server
+			System.out
+					.println("Reading version: " + bulletinBoard.GetVersion());
+			return bulletinBoard.ReadArticlesList();
+		}
 	}
 
 	@Override
 	public String Choose(int id) throws RemoteException {
-		Article a = bulletinBoard.getArticle(id);
-		if (a == null) {
-			System.out.println("The article with ID: " + id
-					+ " does no exist in this server!");
-			return "";
+		if (isCoordinator) { // I am the coordinator
+			Random rnd = new Random();
+			System.out.println("Number of servers total:" + servers.size());
+
+			ArrayList<Integer> quorum = new ArrayList<Integer>();
+			for (int i = 0; i < servers.size(); i++)
+				quorum.add(i);
+
+			// Selecting the quorum
+			while (quorum.size() > QUORUM_NR) {
+				int i = rnd.nextInt(quorum.size());
+				quorum.remove(i);
+			}
+
+			int maxVersion = -1;
+			HostRecord selectedServer = servers.get(0);
+
+			for (int i = 1; i < quorum.size(); i++) {
+				int currentVersion = servers.get(i).rmi.getBBVersion();
+				if (currentVersion > maxVersion) {
+					maxVersion = currentVersion;
+					selectedServer = servers.get(i);
+				}
+			}
+
+			System.out.println("Latest version: " + maxVersion
+					+ " in the server: " + selectedServer);
+			System.out.println("Choosing from that server :)");
+
+			return selectedServer.rmi.Choose(id);
+
+		} else { // I am a regular server
+			System.out
+					.println("Reading version: " + bulletinBoard.GetVersion());
+
+			Article a = bulletinBoard.getArticle(id);
+			if (a == null) {
+				System.out.println("The article with ID: " + id
+						+ " does no exist in this server!");
+				return "";
+			}
+			return a.completeArticle();
 		}
-		return a.completeArticle();
 	}
 
 	/* Server -> Server interface */
 	@Override
 	public int getNextId() throws RemoteException {
-		nextArticleId++;
-		return nextArticleId;
+		if (!isCoordinator) {
+			System.out
+					.println("Asking for the next Id to a server that is not the coordinator!");
+		} else {
+			nextArticleId++;
+		}
+		return nextArticleId - 1;
 	}
 
 	@Override
@@ -204,13 +305,6 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		return false;
 	}
 
-	@Override
-	public boolean Update(BulletinBoard bulletinBoard) {
-		System.out.println("Updated BB: " + bulletinBoard.ReadArticlesList());
-		
-		return false;
-	}
-	
 	@Override
 	public boolean register(String ip, int port) throws RemoteException {
 
@@ -243,27 +337,36 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 	}
 
 	@Override
-	public boolean ackWritePost(int id, String title, String content) throws RemoteException {
-			System.out.println("Received an acknoledgement to write a Post");
-			Article article = new Article(id, -1, title, content);
-			bulletinBoard.addArticle(article);
-			return false;
-	}
-
-	@Override
-	public boolean ackWriteReply(int responseId, int postId, String content) throws RemoteException {
+	public boolean ackWritePost(int id, String title, String content)
+			throws RemoteException {
+		System.out.println("Received an acknoledgement to write a Post");
+		Article article = new Article(id, -1, title, content);
+		bulletinBoard.addArticle(article);
 		return false;
 	}
 
 	@Override
-	public boolean updateWritePost(String title, String content) throws RemoteException{
-			return false;
+	public boolean ackWriteReply(int responseId, int postId, String content)
+			throws RemoteException {
+		System.out.println("Received an acknoledgement to write a Reply");
+		boolean success = bulletinBoard.reply(responseId, postId, content);
+		if (!success) {
+			System.out.println("ERROR replying!");
+		}
+		return success;
+	}
+
+	@Override
+	public boolean updateWritePost(String title, String content)
+			throws RemoteException {
+		return false;
 
 	}
 
 	@Override
-	public boolean updateWriteReply(int id, String content) throws RemoteException{
-				return false;
+	public boolean updateWriteReply(int id, String content)
+			throws RemoteException {
+		return false;
 	}
 
 	@Override

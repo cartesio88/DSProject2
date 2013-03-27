@@ -182,4 +182,11 @@ public class ServerRMIReadYourWriteCons extends UnicastRemoteObject implements
 			throws RemoteException {
 		return false;
 	}
+
+
+	@Override
+	public int getBBVersion() throws RemoteException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }
