@@ -5,6 +5,11 @@ import java.util.LinkedList;
 
 public class BulletinBoard {
 	LinkedList<Article> articles;
+	private int Version=0;
+	
+	public int GetVersion(){
+		return Version;
+	}
 	
 	public BulletinBoard(){
 		articles = new LinkedList<Article>();
@@ -12,6 +17,7 @@ public class BulletinBoard {
 	
 	public void addArticle(Article a){
 		articles.add(a);
+		Version++;
 	}
 	
 	public String ReadArticlesList(){
@@ -56,6 +62,7 @@ public class BulletinBoard {
 		}else{
 			Article response = new Article(responseId, postId, "Re: "+mainArticle.getTitle(), content);
 			mainArticle.getReplies().add(response);
+			Version++;
 		}
 		return true;
 	}

@@ -1,6 +1,7 @@
 package DSProject;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.LinkedList;
 
 public interface ServerInterface extends Remote {
 	/* Client -> Server interface */
@@ -21,4 +22,6 @@ public interface ServerInterface extends Remote {
 	
 	// Quorum based consistency
 	boolean synch() throws RemoteException; // To update all replicas
-} 
+	boolean Update(BulletinBoard bulletinBoard) throws RemoteException;//Update coordinator's BB
+	int getBBVersion() throws RemoteException; // Gets the BB version
+}   

@@ -7,7 +7,11 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Random;
 
 public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		ServerInterface {
@@ -18,6 +22,8 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 	private int QUORUM_NW = 1;
 
 	private String serverName = "";
+	InetAddress coordinatorIp;
+	int coordinatorPort = 0;
 
 	private boolean isCoordinator = false;
 	private String coordinatorName = "";
@@ -40,8 +46,9 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		
 		serverName = serverIp.getHostAddress() + ":" + serverPort;
 		if (!isCoordinator)
-			coordinatorName = coordinatorIp.getHostAddress() + ":"
+				coordinatorName = coordinatorIp.getHostAddress() + ":"
 					+ coordinatorPort;
+		
 
 		// Printing info
 		System.out.println(" == Server info == ");
@@ -60,6 +67,14 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 					+ "\"");
 		}
 		/* ------------------- */
+		
+		/* Version Synchronization */
+		
+		if (isCoordinator) {
+			System.out.println("Run version syncronization....");
+			VersionSync sync = new VersionSync();
+			sync.start();
+		}
 
 		System.setProperty("java.rmi.server.hostname",
 				serverIp.getHostAddress());
@@ -90,7 +105,8 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		} else { // Coordinator initializer
 			coordinator = this;
 			servers = new ArrayList<HostRecord>();
-	
+			HostRecord coordinator = new HostRecord(serverIp.getHostAddress(), serverPort);
+			servers.add(coordinator);
 		}
 	}
 
@@ -102,9 +118,38 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		if (isCoordinator) { // I am the coordinator
 			int articleId = getNextId();
 			Article a = new Article(articleId, -1, title, content);
-			// TODO
+			Random rnd = new Random();
+			System.out.println("Number of servers total:" + servers.size());
+			
+			ArrayList<Integer> index = new ArrayList<Integer>();
+			ArrayList<Integer> Version = new ArrayList<Integer>();
+			for (int i=0; i<QUORUM_NW; i++){
+				int Num = rnd.nextInt(servers.size());
+				while (index.contains(Num)) 
+					Num = rnd.nextInt(servers.size());
+				index.add(Num);
+				Version.add(i, servers.get(index.get(i)).rmi.getBBVersion());
+				System.out.println("Index of server: " + index.get(i) + " Local Version: " + Version.get(i));
+			}
+			int max = Collections.max(Version);
+			int maxInd = index.get(Version.indexOf(max));
+			System.out.println("Latest version: " + max +" Index of a server with latest version: " + maxInd);
+			servers.get(maxInd).rmi.ackWritePost(articleId, title, content);
+			
+			for (int i=0; i<servers.size(); i++){
+				System.out.println("Servers: " + servers.get(i).getIP() +":"+servers.get(i).getPort());
+			}
+			//Iterator<HostRecord> server = servers.iterator();
+			//while(server.hasNext()){
+				//System.out.println("Servers: " + server.next().getIP() +":"+server.next().getPort());	
+			//}
+			
 		} else { // I am a regular server
-			// TODO
+			int articleId = getNextId();
+			Article a = new Article(articleId, -1, title, content);
+			//bulletinBoard.addArticle(a);
+			//System.out.println("Version: " + bulletinBoard.GetVersion());
+			coordinator.Post(title,content);
 		}
 
 		return true;
@@ -117,10 +162,13 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		if (isCoordinator) { // I am the coordinator
 			int articleId = getNextId();
 			Article a = new Article(articleId, id, "", content);
-			UpdateOperation op = new UpdateOperation(a, "Response");
+//			UpdateOperation op = new UpdateOperation(a, "Response");
+			
 			// TODO
 		} else { // I am a regular server
-			// TODO
+			int articleId = getNextId();
+			Article a = new Article(articleId, id, "", content);
+			bulletinBoard.reply(articleId, id, content);
 		}
 		return true;
 	}
@@ -128,6 +176,7 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 	@Override
 	public String Read() throws RemoteException {
 		System.out.println("Reading the articles!");
+		System.out.println("Version: " + bulletinBoard.GetVersion());
 		return bulletinBoard.ReadArticlesList();
 	}
 
@@ -145,13 +194,8 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 	/* Server -> Server interface */
 	@Override
 	public int getNextId() throws RemoteException {
-		if (!isCoordinator) {
-			System.out
-					.println("Asking for the next Id to a server that is not the coordinator!");
-		} else {
-			nextArticleId++;
-		}
-		return nextArticleId - 1;
+		nextArticleId++;
+		return nextArticleId;
 	}
 
 	@Override
@@ -160,6 +204,13 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		return false;
 	}
 
+	@Override
+	public boolean Update(BulletinBoard bulletinBoard) {
+		System.out.println("Updated BB: " + bulletinBoard.ReadArticlesList());
+		
+		return false;
+	}
+	
 	@Override
 	public boolean register(String ip, int port) throws RemoteException {
 
@@ -181,7 +232,7 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		servers.add(server);
 
 		// Update the Quorum values
-		QUORUM_NW = (int) (servers.size() / 2);
+		QUORUM_NW = (int) (servers.size() / 2 + 1);
 		QUORUM_NR = servers.size() - QUORUM_NW + 1;
 
 		if (QUORUM_NW > servers.size() || QUORUM_NR > servers.size()) {
@@ -193,6 +244,9 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 
 	@Override
 	public boolean ackWritePost(int id, String title, String content) throws RemoteException {
+			System.out.println("Received an acknoledgement to write a Post");
+			Article article = new Article(id, -1, title, content);
+			bulletinBoard.addArticle(article);
 			return false;
 	}
 
@@ -210,5 +264,10 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 	@Override
 	public boolean updateWriteReply(int id, String content) throws RemoteException{
 				return false;
+	}
+
+	@Override
+	public int getBBVersion() throws RemoteException {
+		return bulletinBoard.GetVersion();
 	}
 }
