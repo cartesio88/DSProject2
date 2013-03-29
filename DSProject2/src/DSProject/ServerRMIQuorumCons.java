@@ -152,7 +152,7 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 
 			int nextId = this.getNextId();
 			
-			Article a = new Article(nextId, -1, "", content);
+			Article a = new Article(nextId, -1, title, content);
 			UpdateOperation update = new UpdateOperation(a, "Post");
 			historic.add(update);
 			
