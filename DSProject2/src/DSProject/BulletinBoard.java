@@ -1,5 +1,6 @@
 package DSProject;
 
+
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -50,7 +51,7 @@ public class BulletinBoard {
 			a = getArticle(a.getReplies(), id);
 			if(a != null) return a;
 		}
-		System.out.println("Could not find the selected article...");
+		//System.out.println("Could not find the selected article...");
 		return null;
 	}
 	

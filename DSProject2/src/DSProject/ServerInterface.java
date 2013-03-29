@@ -21,6 +21,7 @@ public interface ServerInterface extends Remote {
 	boolean ackWriteReply(int responseId, int postId, String content) throws RemoteException; // Perform the actual write Coordinator -> Server
 	
 	// Quorum based consistency
-	boolean synch() throws RemoteException; // To update all replicas
+	boolean synch(int latestVersion) throws RemoteException; // To update all replicas
 	int getBBVersion() throws RemoteException; // Gets the BB version
+	//BulletinBoard GetBB() throws RemoteException; //Gets the BB
 }   

@@ -71,8 +71,7 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 
 		if (isCoordinator) {
 			System.out.println("Run version syncronization....");
-			VersionSync sync = new VersionSync();
-			sync.start();
+			
 		}
 
 		System.setProperty("java.rmi.server.hostname",
@@ -104,9 +103,16 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 		} else { // Coordinator initializer
 			coordinator = this;
 			servers = new ArrayList<HostRecord>();
+			historic = new LinkedList<UpdateOperation>();
 			HostRecord coordinator = new HostRecord(serverIp.getHostAddress(),
 					serverPort);
 			servers.add(coordinator);
+			
+			System.out.println("Start thread: " + historic.size());
+			Runnable sync = new VersionSync (servers, historic);
+			Thread th = new Thread(sync);
+			th.start();
+			
 		}
 	}
 
@@ -145,6 +151,11 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 			System.out.println("Posting in that server :)");
 
 			int nextId = this.getNextId();
+			
+			Article a = new Article(nextId, -1, "", content);
+			UpdateOperation update = new UpdateOperation(a, "Post");
+			historic.add(update);
+			
 			selectedServer.rmi.ackWritePost(nextId, title, content);
 
 		} else { // I am a regular server
@@ -189,7 +200,12 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 			System.out.println("Replying in that server :)");
 
 			int nextId = this.getNextId();
+			Article a = new Article(nextId, id, "", content);
+			UpdateOperation update = new UpdateOperation(a, "Response");
+			historic.add(update);
+			
 			selectedServer.rmi.ackWriteReply(nextId, id, content);
+			
 
 		} else { // I am a regular server
 			System.out
@@ -300,12 +316,6 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 	}
 
 	@Override
-	public boolean synch() throws RemoteException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
 	public boolean register(String ip, int port) throws RemoteException {
 
 		if (!isCoordinator) {
@@ -350,6 +360,7 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 			throws RemoteException {
 		System.out.println("Received an acknoledgement to write a Reply");
 		boolean success = bulletinBoard.reply(responseId, postId, content);
+		
 		if (!success) {
 			System.out.println("ERROR replying!");
 		}
@@ -372,5 +383,12 @@ public class ServerRMIQuorumCons extends UnicastRemoteObject implements
 	@Override
 	public int getBBVersion() throws RemoteException {
 		return bulletinBoard.GetVersion();
+	}
+	
+	@Override
+	public boolean synch(int latestVersion) throws RemoteException {
+		System.out.println("currentVersion " + getBBVersion() +" LatestVersion: "+ latestVersion);
+		//Read();
+		return false;
 	}
 }
